@@ -1,0 +1,28 @@
+[
+  {
+    "id": "5bd548eb-7618-4b0c-86b0-942c490cbb35",
+    "title": "Logitech Gaming Mouse",
+    "description": "RGB 12000 DPI",
+    "code": "MOU-001",
+    "price": 19999,
+    "status": true,
+    "stock": 30,
+    "category": "peripherals",
+    "thumbnails": [
+      "/images/mouse/Logitech.png"
+    ]
+  },
+  {
+    "id": "659db1f6-dded-4807-b224-139c8d9eed9c",
+    "title": "Razer Mechanical Keyboard",
+    "description": "Red switches",
+    "code": "KEY-002",
+    "price": 129999,
+    "status": true,
+    "stock": 20,
+    "category": "peripherals",
+    "thumbnails": [
+      "/images/keyboard/Razer.png"
+    ]
+  }
+]
