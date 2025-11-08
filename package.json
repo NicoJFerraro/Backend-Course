@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "Entrega 1 - API de productos y carritos con Express",
   "main": "src/server.js",
+  "type": "module",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js"
@@ -11,7 +12,9 @@
   "author": "Nico Ferraro",
   "license": "MIT",
   "dependencies": {
-    "express": "^4.19.2"
+    "express": "^4.19.2",
+    "express-handlebars": "^8.0.3",
+    "socket.io": "^4.8.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.0"

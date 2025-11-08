@@ -1,0 +1,26 @@
+{{#if error}}
+    <div class="error">{{error}}</div>
+{{/if}}
+
+<h2>Products Catalog</h2>
+<p>Total products: {{products.length}}</p>
+
+{{#if products.length}}
+    <div class="product-grid">
+        {{#each products}}
+        <div class="product-card">
+            <div class="product-title">{{this.title}}</div>
+            <p><strong>Description:</strong> {{this.description}}</p>
+            <p><strong>Code:</strong> {{this.code}}</p>
+            <p><strong>Category:</strong> {{this.category}}</p>
+            <p><strong>Stock:</strong> {{this.stock}}</p>
+            <div class="product-price">${{this.price}}</div>
+            <p><strong>Status:</strong> {{#if this.status}}Available{{else}}Unavailable{{/if}}</p>
+        </div>
+        {{/each}}
+    </div>
+{{else}}
+    <p>No products available.</p>
+{{/if}}
+
+<p><a href="/realtimeproducts">Ir a vista en tiempo real</a></p>

@@ -1,15 +1,22 @@
-const fs = require('fs').promises;
-const path = require('path');
-const { randomUUID } = require('crypto');
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { randomUUID } from 'crypto';
 
-class ProductManager {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export default class ProductManager {
   constructor(fileName = 'products.json') {
     this.filePath = path.join(__dirname, '..', 'data', fileName);
   }
 
   async #ensureFile() {
-    try { await fs.access(this.filePath); }
-    catch { await fs.writeFile(this.filePath, JSON.stringify([], null, 2), 'utf-8'); }
+    try {
+      await fs.access(this.filePath);
+    } catch {
+      await fs.writeFile(this.filePath, JSON.stringify([], null, 2), 'utf-8');
+    }
   }
 
   async #read() {
@@ -22,68 +29,98 @@ class ProductManager {
     await fs.writeFile(this.filePath, JSON.stringify(data, null, 2), 'utf-8');
   }
 
-  async getAll() { return await this.#read(); }
-
-  async getById(id) {
-    const items = await this.#read();
-    return items.find(p => String(p.id) === String(id)) || null;
+  async getAll() {
+    return await this.#read();
   }
 
-  async create(payload) {
-    const required = ['title', 'description', 'code', 'price', 'stock', 'category'];
-    for (const key of required) {
-      if (payload[key] === undefined || payload[key] === null) {
-        const err = new Error(`Missing required field: ${key}`);
-        err.status = 400; throw err;
-      }
+  async getById(id) {
+    const products = await this.#read();
+    return products.find(p => String(p.id) === String(id)) || null;
+  }
+
+  async create(productData) {
+    const { title, description, code, price, stock, category, thumbnails = [], status = true } = productData;
+    
+    if (!title || !description || !code || price === undefined || stock === undefined || !category) {
+      const error = new Error("Missing required field");
+      error.status = 400;
+      throw error;
     }
 
-    const items = await this.#read();
-    if (items.some(p => p.code === payload.code)) {
-      const err = new Error('The "code" field already exists for another product.');
-      err.status = 409; throw err;
+    const products = await this.#read();
+    
+    // Check if code already exists
+    const existingProduct = products.find(p => p.code === code);
+    if (existingProduct) {
+      const error = new Error('The "code" field already exists for another product.');
+      error.status = 400;
+      throw error;
+    }
+
+    // Validate thumbnails
+    if (thumbnails && !Array.isArray(thumbnails)) {
+      const error = new Error('"thumbnails" must be an array of strings');
+      error.status = 400;
+      throw error;
     }
 
     const product = {
       id: randomUUID(),
-      title: String(payload.title),
-      description: String(payload.description),
-      code: String(payload.code),
-      price: Number(payload.price),
-      status: payload.status === undefined ? true : Boolean(payload.status),
-      stock: Number(payload.stock),
-      category: String(payload.category),
-      thumbnails: Array.isArray(payload.thumbnails) ? payload.thumbnails.map(String) : []
+      title,
+      description,
+      code,
+      price: Number(price),
+      status: Boolean(status),
+      stock: Number(stock),
+      category,
+      thumbnails: Array.isArray(thumbnails) ? thumbnails : []
     };
 
-    items.push(product);
-    await this.#write(items);
+    products.push(product);
+    await this.#write(products);
     return product;
   }
 
-  async update(id, updates) {
-    const items = await this.#read();
-    const idx = items.findIndex(p => String(p.id) === String(id));
-  if (idx === -1) { const e = new Error('Product not found'); e.status = 404; throw e; }
-
-    const { id: _ignore, ...rest } = updates || {};
-    if (rest.thumbnails && !Array.isArray(rest.thumbnails)) {
-      const e = new Error('"thumbnails" must be an array of strings'); e.status = 400; throw e;
+  async update(id, updateData) {
+    const products = await this.#read();
+    const idx = products.findIndex(p => String(p.id) === String(id));
+    
+    if (idx === -1) {
+      const error = new Error("Product not found");
+      error.status = 404;
+      throw error;
     }
 
-    const updated = { ...items[idx], ...rest };
-    items[idx] = updated;
-    await this.#write(items);
-    return updated;
+    // Don't allow updating the id
+    delete updateData.id;
+
+    // Check code uniqueness if code is being updated
+    if (updateData.code) {
+      const existingProduct = products.find(p => p.code === updateData.code && String(p.id) !== String(id));
+      if (existingProduct) {
+        const error = new Error('The "code" field already exists for another product.');
+        error.status = 400;
+        throw error;
+      }
+    }
+
+    products[idx] = { ...products[idx], ...updateData };
+    await this.#write(products);
+    return products[idx];
   }
 
-  async delete(id) {
-    const items = await this.#read();
-    const newItems = items.filter(p => String(p.id) !== String(id));
-  if (newItems.length === items.length) { const e = new Error('Product not found'); e.status = 404; throw e; }
-    await this.#write(newItems);
-    return { deleted: id };
+  async deleteById(id) {
+    const products = await this.#read();
+    const idx = products.findIndex(p => String(p.id) === String(id));
+    
+    if (idx === -1) {
+      const error = new Error("Product not found");
+      error.status = 404;
+      throw error;
+    }
+
+    products.splice(idx, 1);
+    await this.#write(products);
+    return true;
   }
 }
-
-module.exports = ProductManager;

@@ -1,26 +1,32 @@
-const express = require('express');
-const productsRouter = require('./routes/products.router');
-const cartsRouter = require('./routes/carts.router');
+import { createServer } from 'http';
+import { Server } from 'socket.io';
+import app from './app.js';
+import { productManager } from './instances.js';
 
-const app = express();
+const PORT = 8080;
+const httpServer = createServer(app);
+const io = new Server(httpServer);
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Make io accessible in routes
+app.set('io', io);
 
-app.use('/api/products', productsRouter);
-app.use('/api/carts', cartsRouter);
+// Socket.IO connection handling
+io.on('connection', async (socket) => {
+  console.log('New client connected:', socket.id);
+  
+  // Send initial product list
+  try {
+    const products = await productManager.getAll();
+    socket.emit('products:update', products);
+  } catch (error) {
+    console.error('Error sending initial products:', error);
+  }
 
-app.get('/health', (_req, res) => res.json({ ok: true }));
-
-app.use((err, _req, res, _next) => {
-  console.error(err);
-  res.status(err.status || 500).json({
-    status: 'error',
-    message: err.message || 'Internal Server Error'
+  socket.on('disconnect', () => {
+    console.log('Client disconnected:', socket.id);
   });
 });
 
-const PORT = 8080;
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
 });

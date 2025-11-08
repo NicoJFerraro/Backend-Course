@@ -1,43 +1,74 @@
-const { Router } = require('express');
-const ProductManager = require('../managers/ProductManager');
+import { Router } from 'express';
+import { productManager } from '../instances.js';
 
 const router = Router();
-const pm = new ProductManager();
 
-router.get('/', async (_req, res, next) => {
+router.get('/', async (req, res) => {
   try {
-    const products = await pm.getAll();
-    res.json({ status: 'success', payload: products });
-  } catch (err) { next(err); }
+    const { limit } = req.query;
+    const products = await productManager.getAll();
+    const result = limit ? products.slice(0, parseInt(limit)) : products;
+    res.json(result);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-router.get('/:pid', async (req, res, next) => {
+router.get('/:pid', async (req, res) => {
   try {
-    const product = await pm.getById(req.params.pid);
-    if (!product) return res.status(404).json({ status: 'error', message: 'Product not found' });
-    res.json({ status: 'success', payload: product });
-  } catch (err) { next(err); }
+    const { pid } = req.params;
+    const product = await productManager.getById(pid);
+    if (!product) {
+      return res.status(404).json({ error: "Product not found" });
+    }
+    res.json(product);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-router.post('/', async (req, res, next) => {
+router.post('/', async (req, res) => {
   try {
-    const created = await pm.create(req.body);
-    res.status(201).json({ status: 'success', payload: created });
-  } catch (err) { next(err); }
+    const product = await productManager.create(req.body);
+    
+    // Emit socket event after creating product
+    const products = await productManager.getAll();
+    req.app.get('io').emit('products:update', products);
+    
+    res.status(201).json(product);
+  } catch (error) {
+    res.status(error.status || 400).json({ error: error.message });
+  }
 });
 
-router.put('/:pid', async (req, res, next) => {
+router.put('/:pid', async (req, res) => {
   try {
-    const updated = await pm.update(req.params.pid, req.body);
-    res.json({ status: 'success', payload: updated });
-  } catch (err) { next(err); }
+    const { pid } = req.params;
+    const product = await productManager.update(pid, req.body);
+    
+    // Emit socket event after updating product
+    const products = await productManager.getAll();
+    req.app.get('io').emit('products:update', products);
+    
+    res.json(product);
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
 });
 
-router.delete('/:pid', async (req, res, next) => {
+router.delete('/:pid', async (req, res) => {
   try {
-    const result = await pm.delete(req.params.pid);
-    res.json({ status: 'success', payload: result });
-  } catch (err) { next(err); }
+    const { pid } = req.params;
+    await productManager.deleteById(pid);
+    
+    // Emit socket event after deleting product
+    const products = await productManager.getAll();
+    req.app.get('io').emit('products:update', products);
+    
+    res.json({ message: 'Product deleted successfully' });
+  } catch (error) {
+    res.status(error.status || 500).json({ error: error.message });
+  }
 });
 
-module.exports = router;
+export default router;

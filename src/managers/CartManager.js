@@ -1,15 +1,22 @@
-const fs = require('fs').promises;
-const path = require('path');
-const { randomUUID } = require('crypto');
+import fs from 'fs/promises';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { randomUUID } from 'crypto';
 
-class CartManager {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+export default class CartManager {
   constructor(fileName = 'carts.json') {
     this.filePath = path.join(__dirname, '..', 'data', fileName);
   }
 
   async #ensureFile() {
-    try { await fs.access(this.filePath); }
-    catch { await fs.writeFile(this.filePath, JSON.stringify([], null, 2), 'utf-8'); }
+    try {
+      await fs.access(this.filePath);
+    } catch {
+      await fs.writeFile(this.filePath, JSON.stringify([], null, 2), 'utf-8');
+    }
   }
 
   async #read() {
@@ -38,17 +45,22 @@ class CartManager {
   async addProduct(cartId, productId, quantity = 1) {
     const carts = await this.#read();
     const idx = carts.findIndex(c => String(c.id) === String(cartId));
-  if (idx === -1) { const e = new Error('Cart not found'); e.status = 404; throw e; }
+    if (idx === -1) {
+      const e = new Error('Cart not found');
+      e.status = 404;
+      throw e;
+    }
 
     const cart = carts[idx];
     const itemIdx = cart.products.findIndex(i => String(i.product) === String(productId));
-    if (itemIdx === -1) cart.products.push({ product: String(productId), quantity: Number(quantity) || 1 });
-    else cart.products[itemIdx].quantity += Number(quantity) || 1;
+    if (itemIdx === -1) {
+      cart.products.push({ product: String(productId), quantity: Number(quantity) || 1 });
+    } else {
+      cart.products[itemIdx].quantity += Number(quantity) || 1;
+    }
 
     carts[idx] = cart;
     await this.#write(carts);
     return cart;
   }
 }
-
-module.exports = CartManager;

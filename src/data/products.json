@@ -24,5 +24,31 @@
     "thumbnails": [
       "/images/keyboard/Razer.png"
     ]
+  },
+  {
+    "id": "59d53f6f-e0d1-40a4-bd0e-b2b04d9a5bf0",
+    "title": "NVIDIA RTX 5090",
+    "description": "The best graphics card in the market",
+    "code": "GPU-004",
+    "price": 1000000,
+    "status": true,
+    "stock": 5,
+    "category": "graphics-cards",
+    "thumbnails": [
+      "https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/rtx-5090/"
+    ]
+  },
+  {
+    "id": "54ba122a-5b2a-4c7f-8004-222b1d79c378",
+    "title": "Teclado Mecánico Logitech",
+    "description": "Switches brown",
+    "code": "KEY-0100",
+    "price": 129999,
+    "status": true,
+    "stock": 12,
+    "category": "peripherals",
+    "thumbnails": [
+      "/images/keyboard1.png"
+    ]
   }
 ]
