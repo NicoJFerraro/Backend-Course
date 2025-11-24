@@ -96,6 +96,19 @@ async function deleteProduct(productId) {
   }
 }
 
+// Load initial products
+async function loadProducts() {
+  try {
+    const response = await fetch('/api/products');
+    const data = await response.json();
+    const products = data.payload || data;
+    renderProducts(products);
+  } catch (error) {
+    console.error('Error loading products:', error);
+    showStatus('Error loading products', true);
+  }
+}
+
 // Socket event listeners
 socket.on('products:update', (products) => {
   console.log('Products updated:', products.length);
@@ -105,6 +118,8 @@ socket.on('products:update', (products) => {
 socket.on('connect', () => {
   console.log('Connected to server');
   showStatus('Connected to real-time updates!');
+  // Load products when connected
+  loadProducts();
 });
 
 socket.on('disconnect', () => {

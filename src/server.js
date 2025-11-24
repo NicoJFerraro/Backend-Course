@@ -15,14 +15,9 @@ async function start() {
     const io = new Server(httpServer);
     app.set('io', io);
 
-    io.on('connection', async (socket) => {
+    io.on('connection', (socket) => {
       console.log('New client connected:', socket.id);
-      try {
-        const products = await Product.find().lean();
-        socket.emit('products:update', products);
-      } catch (error) {
-        console.error('Error sending initial products:', error);
-      }
+      
       socket.on('disconnect', () => {
         console.log('Client disconnected:', socket.id);
       });
