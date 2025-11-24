@@ -1,27 +1,28 @@
-# Backend Course - E-commerce API con WebSockets
+# Backend Course - E-commerce API con MongoDB
 
 ## Descripción
 
-Este proyecto es una API REST completa para un sistema de e-commerce desarrollada con Node.js, Express y WebSockets. Implementa gestión de productos y carritos de compras tanto a través de endpoints HTTP como con comunicación en tiempo real mediante Socket.IO y vistas renderizadas con Handlebars.
+Este proyecto es una API REST profesional para un sistema de e-commerce desarrollada con Node.js, Express, MongoDB y WebSockets. Implementa gestión completa de productos y carritos de compras con paginación, filtros, ordenamiento y vistas renderizadas con Handlebars.
 
-## Características
+## Características Principales
 
-- **Gestión de Productos**: CRUD completo (Crear, Leer, Actualizar, Eliminar)
-- **Gestión de Carritos**: Crear carritos y agregar productos con manejo de cantidades
+- **Gestión de Productos con Paginación**: CRUD completo con soporte de paginación, filtros y ordenamiento
+- **Gestión Avanzada de Carritos**: CRUD completo con populate de productos y actualización de cantidades
+- **Base de Datos MongoDB**: Persistencia profesional con Mongoose y referencias entre colecciones
 - **Motor de Plantillas**: Vistas renderizadas con Handlebars
 - **Comunicación en Tiempo Real**: WebSockets con Socket.IO para actualizaciones instantáneas
-- **Persistencia en archivos JSON**: Los datos se almacenan localmente
+- **API REST Profesional**: Respuestas estandarizadas con status, payload y metadata
 - **Validaciones Completas**: Validación de campos requeridos, unicidad de códigos y formatos
 - **Manejo de Errores**: Respuestas de error estructuradas y códigos HTTP apropiados
-- **Interfaz Web**: Formularios para gestión de productos en tiempo real
+- **Interfaz Web Interactiva**: Vistas de productos paginados, detalles y carrito
 
 ## Tecnologías Utilizadas
 
 - **Backend**: Node.js, Express.js
+- **Base de Datos**: MongoDB, Mongoose
+- **Paginación**: mongoose-paginate-v2
 - **Motor de Vistas**: Handlebars
 - **Tiempo Real**: Socket.IO
-- **Persistencia**: File System (fs) con archivos JSON
-- **Identificadores**: UUID/crypto para IDs únicos
 - **ES6 Modules**: Importación/exportación moderna de JavaScript
 
 ## Estructura del Proyecto
@@ -30,31 +31,38 @@ Este proyecto es una API REST completa para un sistema de e-commerce desarrollad
 Backend-Course/
 ├── package.json
 ├── README.md
-├── public/                 # Archivos estáticos
+├── seed.js               # Script para poblar la BD con datos de prueba
+├── public/               # Archivos estáticos
 │   └── js/
-│       └── realtime.js    # Cliente Socket.IO
+│       └── realtime.js   # Cliente Socket.IO
 ├── src/
-│   ├── app.js             # Configuración de Express y Handlebars
-│   ├── server.js          # Servidor HTTP y Socket.IO
-│   ├── instances.js       # Instancias compartidas de managers
-│   ├── data/              # Persistencia JSON
-│   │   ├── products.json
-│   │   └── carts.json
-│   ├── managers/          # Lógica de negocio
-│   │   ├── ProductManager.js
-│   │   └── CartManager.js
-│   ├── routes/            # Endpoints de la API
-│   │   ├── products.router.js
-│   │   ├── carts.router.js
-│   │   └── views.router.js
-│   └── views/             # Plantillas Handlebars
+│   ├── app.js            # Configuración de Express y Handlebars
+│   ├── server.js         # Servidor HTTP, Socket.IO y MongoDB
+│   ├── instances.js      # (Legacy) Instancias de managers file-based
+│   ├── models/           # Modelos Mongoose
+│   │   ├── Product.js    # Schema de productos con paginate
+│   │   └── Cart.js       # Schema de carritos con referencias
+│   ├── routes/           # Endpoints de la API
+│   │   ├── products.router.js  # CRUD + paginación/filtros
+│   │   ├── carts.router.js     # CRUD + populate
+│   │   └── views.router.js     # Vistas Handlebars
+│   └── views/            # Plantillas Handlebars
 │       ├── layouts/
 │       │   └── main.handlebars
-│       ├── home.handlebars
-│       └── realTimeProducts.handlebars
+│       ├── home.handlebars              # Vista legacy simple
+│       ├── realTimeProducts.handlebars  # Vista tiempo real
+│       ├── products.handlebars          # Vista paginada
+│       ├── productDetail.handlebars     # Detalle de producto
+│       └── cart.handlebars              # Vista de carrito
 ```
 
 ## Instalación y Ejecución
+
+### Requisitos Previos
+- Node.js (v16 o superior)
+- MongoDB (local o Atlas)
+
+### Pasos de Instalación
 
 1. **Cloná el repositorio**:
    ```bash
@@ -67,17 +75,42 @@ Backend-Course/
    npm install
    ```
 
-3. **Ejecutá el servidor**:
+3. **Configurá MongoDB**:
+   
+   **Opción A - MongoDB Local (macOS):**
+   ```bash
+   brew tap mongodb/brew
+   brew install mongodb-community
+   brew services start mongodb/brew/mongodb-community
+   ```
+   
+   **Opción B - MongoDB Atlas (Cloud):**
+   - Creá una cuenta en [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+   - Creá un cluster gratuito
+   - Obtené tu connection string
+   - Exportá la variable de entorno:
+   ```bash
+   export MONGO_URI="mongodb+srv://usuario:password@cluster.mongodb.net/ecommerce"
+   ```
+
+4. **Poblá la base de datos** (opcional):
+   ```bash
+   node seed.js
+   ```
+   Esto creará 15 productos de ejemplo en diferentes categorías.
+
+5. **Ejecutá el servidor**:
    ```bash
    npm run dev    # Modo desarrollo con nodemon
    # o
    npm start      # Modo producción
    ```
 
-4. **Accedé a la aplicación**:
+6. **Accedé a la aplicación**:
    - Servidor: `http://localhost:8080`
-   - Vista estática: `http://localhost:8080/`
+   - Vista productos paginados: `http://localhost:8080/products`
    - Vista tiempo real: `http://localhost:8080/realtimeproducts`
+   - API: `http://localhost:8080/api/products`
 
 ## Endpoints de la API
 
@@ -85,56 +118,187 @@ Backend-Course/
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| `GET` | `/api/products` | Obtener todos los productos (opcional: `?limit=N`) |
+| `GET` | `/api/products` | Obtener productos paginados (soporta filtros y ordenamiento) |
 | `GET` | `/api/products/:pid` | Obtener un producto específico |
 | `POST` | `/api/products` | Crear un nuevo producto |
 | `PUT` | `/api/products/:pid` | Actualizar un producto existente |
 | `DELETE` | `/api/products/:pid` | Eliminar un producto |
+
+#### Query Params para GET /api/products
+- `limit` (default: 10) - Cantidad de productos por página
+- `page` (default: 1) - Número de página
+- `query` - Filtrar por categoría o disponibilidad (`available` / `unavailable`)
+- `sort` - Ordenar por precio (`asc` / `desc`)
+
+**Ejemplo de respuesta:**
+```json
+{
+  "status": "success",
+  "payload": [...],
+  "totalPages": 3,
+  "prevPage": null,
+  "nextPage": 2,
+  "page": 1,
+  "hasPrevPage": false,
+  "hasNextPage": true,
+  "prevLink": null,
+  "nextLink": "http://localhost:8080/api/products?page=2&limit=10"
+}
+```
 
 ### 🛒 Carritos
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
 | `POST` | `/api/carts` | Crear un nuevo carrito vacío |
-| `GET` | `/api/carts/:cid` | Obtener productos de un carrito |
-| `POST` | `/api/carts/:cid/product/:pid` | Agregar/incrementar producto en carrito |
+| `GET` | `/api/carts/:cid` | Obtener carrito con productos populados |
+| `POST` | `/api/carts/:cid/products/:pid` | Agregar/incrementar producto en carrito |
+| `DELETE` | `/api/carts/:cid/products/:pid` | Eliminar un producto específico del carrito |
+| `PUT` | `/api/carts/:cid` | Actualizar carrito con array de productos |
+| `PUT` | `/api/carts/:cid/products/:pid` | Actualizar solo la cantidad de un producto |
+| `DELETE` | `/api/carts/:cid` | Vaciar el carrito completamente |
+
+**Ejemplos de uso:**
+
+```bash
+# Actualizar cantidad de un producto
+PUT /api/carts/:cid/products/:pid
+{ "quantity": 5 }
+
+# Reemplazar todos los productos del carrito
+PUT /api/carts/:cid
+[
+  { "product": "id1", "quantity": 2 },
+  { "product": "id2", "quantity": 1 }
+]
+```
 
 ### 🌐 Vistas
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
-| `GET` | `/` | Vista estática de productos (home.handlebars) |
-| `GET` | `/realtimeproducts` | Vista en tiempo real con formularios y WebSockets |
+| `GET` | `/` | Vista home estática de productos |
+| `GET` | `/products` | Vista paginada de productos con filtros |
+| `GET` | `/products/:pid` | Detalle completo de un producto |
+| `GET` | `/carts/:cid` | Vista del carrito con productos y totales |
+| `GET` | `/realtimeproducts` | Vista en tiempo real con WebSockets |
 
 ## Formato de Datos
 
-### Producto
-```json
+### Producto (Modelo Mongoose)
+```javascript
 {
-  "id": "uuid-generado-automaticamente",
-  "title": "NVIDIA GeForce RTX 4070 Ti",
-  "description": "Placa de video de alto rendimiento para gaming",
-  "code": "GPU-RTX4070TI",
-  "price": 89999,
-  "status": true,
-  "stock": 15,
-  "category": "graphics-cards",
-  "thumbnails": ["/images/rtx4070ti.jpg"]
+  _id: ObjectId("..."),
+  title: "NVIDIA GeForce RTX 4070",
+  description: "Tarjeta gráfica de alto rendimiento",
+  code: "GPU-RTX4070",
+  price: 180000,
+  status: true,
+  stock: 3,
+  category: "graphics-cards",
+  thumbnails: ["https://example.com/image.jpg"],
+  createdAt: "2025-11-24T...",
+  updatedAt: "2025-11-24T..."
 }
 ```
 
-### Carrito
-```json
+### Carrito (Modelo Mongoose con Referencias)
+```javascript
 {
-  "id": "uuid-generado-automaticamente",
-  "products": [
+  _id: ObjectId("..."),
+  products: [
     {
-      "product": "id-del-producto",
-      "quantity": 2
+      product: {
+        _id: ObjectId("..."),
+        title: "NVIDIA GeForce RTX 4070",
+        price: 180000,
+        // ... resto de campos del producto
+      },
+      quantity: 2
     }
-  ]
+  ],
+  createdAt: "2025-11-24T...",
+  updatedAt: "2025-11-24T..."
 }
 ```
+
+## Ejemplos de Uso
+
+### 📊 Productos con Paginación y Filtros
+
+```bash
+# Obtener primera página con 5 productos
+GET http://localhost:8080/api/products?limit=5&page=1
+
+# Filtrar por categoría
+GET http://localhost:8080/api/products?query=graphics-cards
+
+# Solo productos disponibles
+GET http://localhost:8080/api/products?query=available
+
+# Ordenar por precio ascendente
+GET http://localhost:8080/api/products?sort=asc
+
+# Combinar filtros
+GET http://localhost:8080/api/products?query=gaming-peripherals&sort=desc&limit=10&page=2
+```
+
+### 🛒 Gestión de Carritos
+
+```bash
+# 1. Crear un nuevo carrito
+POST http://localhost:8080/api/carts
+# Response: { "status": "success", "payload": { "_id": "...", "products": [] } }
+
+# 2. Agregar producto al carrito
+POST http://localhost:8080/api/carts/{cid}/products/{pid}
+# Body (opcional): { "quantity": 3 }
+
+# 3. Ver carrito con productos completos (populate)
+GET http://localhost:8080/api/carts/{cid}
+
+# 4. Actualizar cantidad de un producto específico
+PUT http://localhost:8080/api/carts/{cid}/products/{pid}
+# Body: { "quantity": 7 }
+
+# 5. Eliminar un producto del carrito
+DELETE http://localhost:8080/api/carts/{cid}/products/{pid}
+
+# 6. Reemplazar todos los productos
+PUT http://localhost:8080/api/carts/{cid}
+# Body: [
+#   { "product": "productId1", "quantity": 2 },
+#   { "product": "productId2", "quantity": 1 }
+# ]
+
+# 7. Vaciar el carrito
+DELETE http://localhost:8080/api/carts/{cid}
+```
+
+### ⚡ Vistas Interactivas
+
+1. **Vista de Productos Paginada**: 
+   - Navegar a `http://localhost:8080/products`
+   - Usa botones "Anterior" / "Siguiente"
+## Arquitectura y Patrones
+
+### Base de Datos MongoDB
+- **Modelos Mongoose**: Schemas con validaciones y tipos
+- **Referencias**: Cart → Product usando `ref` y `populate()`
+- **Paginación**: Plugin `mongoose-paginate-v2` para paginación eficiente
+- **Timestamps**: Campos automáticos `createdAt` y `updatedAt`
+
+### API REST Profesional
+- **Respuestas Estandarizadas**: Formato consistente con `status` y `payload`
+- **Códigos HTTP Apropiados**: 200, 201, 400, 404, 500
+- **Manejo de Errores**: Try-catch en todos los endpoints
+- **Query Parameters**: Soporte completo para filtrado y paginación
+
+### Patrones de Diseño
+- **Separación de Responsabilidades**: Routes → Controllers → Models
+- **Async/Await**: Manejo asíncrono moderno
+- **Populate**: Carga de referencias para evitar múltiples queries
+- **Lean Queries**: `.lean()` para mejor performance en lectura
 
 ## Funcionalidades en Tiempo Real
 
@@ -156,71 +320,63 @@ Backend-Course/
 
 ### Productos
 - ✅ **Campos Requeridos**: title, description, code, price, stock, category
-- ✅ **Unicidad de Código**: No se permiten códigos duplicados
-- ✅ **Tipos de Datos**: Validación de números, booleanos y arrays
-- ✅ **Thumbnails**: Debe ser un array de strings (opcional)
+- ✅ **Unicidad de Código**: No se permiten códigos duplicados (unique index en MongoDB)
+- ✅ **Tipos de Datos**: Validación a nivel de schema con Mongoose
+- ✅ **Thumbnails**: Array de strings opcional
+- ✅ **Status**: Boolean con valor por defecto `true`
 
 ### Carritos
-- ✅ **Existencia de Carrito**: Validación de carrito existente
-- ✅ **Gestión de Cantidad**: Incremento automático si el producto ya existe
-- ✅ **Productos Únicos**: Un producto por carrito con cantidad acumulativa
+- ✅ **Existencia de Producto**: Validación antes de agregar al carrito
+- ✅ **Referencias Válidas**: ObjectId válidos para productos
+- ✅ **Gestión de Cantidad**: Incremento automático si producto ya existe
+- ✅ **Populate**: Carga completa de datos del producto al consultar carrito
 
-## Tecnologías de Desarrollo
+## Testing y Desarrollo
 
-### Backend Architecture
-- **Patrón MVC**: Separación clara entre rutas, lógica y persistencia
-- **ES6 Modules**: Sintaxis moderna con import/export
-- **Async/Await**: Manejo asíncrono de archivos y operaciones
-- **Error Handling**: Manejo centralizado de errores con códigos HTTP apropiados
+### 🧪 Testing Manual
+1. **API REST**: Usar Postman, Thunder Client o curl
+2. **Paginación**: Probar diferentes valores de `page` y `limit`
+3. **Filtros**: Verificar filtrado por categoría y disponibilidad
+4. **Populate**: Confirmar que GET /api/carts/:cid devuelve productos completos
+5. **WebSockets**: Abrir múltiples pestañas para ver sincronización
 
-### Frontend Integration
-- **Handlebars**: Motor de plantillas para renderizado server-side
-- **Socket.IO Client**: Comunicación bidireccional en tiempo real
-- **Vanilla JavaScript**: Cliente WebSocket sin dependencias adicionales
-- **Responsive Design**: Interfaz adaptable con CSS Grid
-
-## Casos de Uso
-
-### 📊 Gestión de Inventario
+### 🔧 Desarrollo Local
 ```bash
-# Crear producto de gaming
-POST /api/products
-{
-  "title": "Razer DeathAdder V3 Pro",
-  "description": "Mouse gaming inalámbrico de alta precisión",
-  "code": "MOUSE-RZR-001",
-  "price": 14999,
-  "stock": 25,
-  "category": "gaming-peripherals",
-  "thumbnails": ["/images/razer-deathadder-v3.jpg"]
-}
+# Modo desarrollo con auto-restart
+npm run dev
+
+# Poblar base de datos con datos de prueba
+node seed.js
+
+# Verificar conexión a MongoDB
+mongosh "mongodb://localhost:27017/ecommerce"
 ```
 
-### 🛒 Flujo de Compra
+### 📊 Verificación de Base de Datos
 ```bash
-# 1. Crear carrito
-POST /api/carts
-# Response: { "id": "cart-uuid", "products": [] }
+# Conectar a MongoDB
+mongosh
 
-# 2. Agregar productos
-POST /api/carts/{cart-id}/product/{product-id}
-# 3. Consultar carrito
-GET /api/carts/{cart-id}
+# Seleccionar base de datos
+use ecommerce
+
+# Ver colecciones
+show collections
+
+# Contar productos
+db.products.countDocuments()
+
+# Ver carritos
+db.carts.find().pretty()
 ```
-
-### ⚡ Tiempo Real
-1. **Usuario A** entra a `/realtimeproducts`
-2. **Usuario B** entra a `/realtimeproducts` en otra pestaña
-3. **Usuario A** crea un producto → aparece instantáneamente en **Usuario B**
-4. **Usuario B** elimina un producto → desaparece en **Usuario A**
 
 ## Monitoreo y Debugging
 
 ### Logs del Servidor
 ```
+MongoDB connected
 Server listening on http://localhost:8080
 New client connected: socket-id-123
-Products updated: 5
 Client disconnected: socket-id-123
 ```
 
@@ -232,50 +388,68 @@ socket.on('products:update', (products) => console.log('Products:', products.len
 socket.on('disconnect', () => console.log('Disconnected'));
 ```
 
-## Testing y Desarrollo
+## Variables de Entorno
 
-### 🧪 Testing Manual
-1. **API HTTP**: Usar Postman o Thunder Client
-2. **WebSockets**: Abrir múltiples pestañas del navegador
-3. **Persistencia**: Verificar archivos JSON en `src/data/`
-
-### 🔧 Desarrollo Local
 ```bash
-# Modo desarrollo con auto-restart
-npm run dev
+# MongoDB URI (opcional, default: mongodb://localhost:27017/ecommerce)
+MONGO_URI=mongodb://localhost:27017/ecommerce
 
-# Modo producción
-npm start
+# Para MongoDB Atlas
+MONGO_URI=mongodb+srv://user:password@cluster.mongodb.net/ecommerce?retryWrites=true&w=majority
+
+# Puerto del servidor (opcional, default: 8080)
+PORT=8080
 ```
 
 ## Próximas Mejoras (Roadmap)
 
-- [ ] Base de datos (MongoDB/PostgreSQL)
-- [ ] Autenticación y autorización
-- [ ] Paginación avanzada
-- [ ] Filtros y búsqueda
-- [ ] Upload de imágenes
-- [ ] Tests automatizados
+- [x] Base de datos MongoDB
+- [x] Paginación avanzada
+- [x] Filtros y ordenamiento
+- [x] Referencias con populate
+- [ ] Autenticación y autorización (JWT)
+- [ ] Roles y permisos
+- [ ] Upload de imágenes (Cloudinary/S3)
+- [ ] Tests automatizados (Jest/Mocha)
 - [ ] Documentación con Swagger
 - [ ] Rate limiting
-- [ ] Logs estructurados
+- [ ] Logs estructurados (Winston)
+- [ ] Checkout y órdenes
+- [ ] Pasarela de pagos
 
 ## Autor
 
-**NICOLAS FERRARO**  
-Desarrollador Full Stack en formación
+**Nicolás Ferraro**  
+Desarrollador Full Stack en formación  
+*Coderhouse Backend Course - Entrega N°3*
 
 ## Propósito Educativo
 
-Este proyecto se desarrolla con **fines exclusivamente educativos** como parte de un curso de desarrollo backend. Implementa patrones y tecnologías modernas para aprendizaje de:
+Este proyecto se desarrolla con **fines exclusivamente educativos** como parte del curso de Backend de Coderhouse. Implementa patrones y tecnologías profesionales para aprendizaje de:
 
-- Arquitectura de APIs REST
-- Comunicación en tiempo real
-- Persistencia de datos
-- Renderizado server-side
-- Integración frontend-backend
+- Arquitectura de APIs REST profesionales
+- Base de datos MongoDB con Mongoose
+- Paginación, filtros y ordenamiento
+- Referencias entre colecciones (populate)
+- Comunicación en tiempo real con WebSockets
+- Renderizado server-side con Handlebars
+- Operaciones CRUD completas
 
-No está destinado para uso comercial o en producción sin las debidas consideraciones de seguridad y escalabilidad.
+### Entrega N°3 - Requisitos Implementados
+
+✅ **GET /api/products** con paginación, filtros y ordenamiento  
+✅ Formato de respuesta estandarizado con metadata de paginación  
+✅ **DELETE /api/carts/:cid/products/:pid** - eliminar producto del carrito  
+✅ **PUT /api/carts/:cid** - actualizar array completo de productos  
+✅ **PUT /api/carts/:cid/products/:pid** - actualizar cantidad  
+✅ **DELETE /api/carts/:cid** - vaciar carrito  
+✅ Modelo Cart con referencias a Product usando `ref`  
+✅ Populate en GET /api/carts/:cid  
+✅ Vista `/products` con paginación y links prev/next  
+✅ Vista `/products/:pid` con detalle del producto  
+✅ Vista `/carts/:cid` con productos, cantidades y totales
+
+No está destinado para uso comercial o en producción sin las debidas consideraciones de seguridad, escalabilidad y optimización.
 
 ## Licencia
 

@@ -1,0 +1,19 @@
+{{#if error}}
+  <div class="error">{{error}}</div>
+{{else}}
+  <h2>{{product.title}}</h2>
+  <p>{{product.description}}</p>
+  <p><strong>Code:</strong> {{product.code}}</p>
+  <p><strong>Category:</strong> {{product.category}}</p>
+  <p><strong>Stock:</strong> {{product.stock}}</p>
+  <p><strong>Price:</strong> ${{product.price}}</p>
+  <p><strong>Status:</strong> {{#if product.status}}Disponible{{else}}No disponible{{/if}}</p>
+  {{#if product.thumbnails.length}}
+    <div>
+      {{#each product.thumbnails}}
+        <img src="{{this}}" alt="{{../product.title}}" style="max-width:120px;" />
+      {{/each}}
+    </div>
+  {{/if}}
+{{/if}}
+<p><a href="/products">Volver al listado</a></p>

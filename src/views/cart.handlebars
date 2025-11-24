@@ -1,0 +1,45 @@
+<h2>Carrito</h2>
+{{#if error}}
+  <div class="error">{{error}}</div>
+{{/if}}
+<table border="1" cellpadding="6" cellspacing="0">
+  <thead>
+    <tr>
+      <th>Producto</th>
+      <th>Precio</th>
+      <th>Cantidad</th>
+      <th>Subtotal</th>
+      <th>Acciones</th>
+    </tr>
+  </thead>
+  <tbody>
+    {{#each products}}
+    <tr>
+      <td>{{this.title}}</td>
+      <td>${{this.price}}</td>
+      <td>{{this.quantity}}</td>
+      <td>${{this.subtotal}}</td>
+      <td>
+        <button class="del-btn" data-id="{{this.id}}">Eliminar</button>
+      </td>
+    </tr>
+    {{/each}}
+  </tbody>
+</table>
+<p><strong>Total:</strong> ${{total}}</p>
+<button id="empty-cart">Vaciar carrito</button>
+<script>
+  const cartId = '{{cartId}}';
+  document.querySelectorAll('.del-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const pid = btn.getAttribute('data-id');
+      const res = await fetch(`/api/carts/${cartId}/products/${pid}`, { method: 'DELETE' });
+      if (res.ok) location.reload(); else alert('Error eliminando producto');
+    });
+  });
+  document.getElementById('empty-cart').addEventListener('click', async () => {
+    const res = await fetch(`/api/carts/${cartId}`, { method: 'DELETE' });
+    if (res.ok) location.reload(); else alert('Error vaciando carrito');
+  });
+</script>
+<p><a href="/products?cartId={{cartId}}">Seguir comprando</a></p>

@@ -1,32 +1,40 @@
 import { createServer } from 'http';
 import { Server } from 'socket.io';
+import mongoose from 'mongoose';
 import app from './app.js';
-import { productManager } from './instances.js';
+import { Product } from './models/Product.js';
 
 const PORT = 8080;
-const httpServer = createServer(app);
-const io = new Server(httpServer);
-
-// Make io accessible in routes
-app.set('io', io);
-
-// Socket.IO connection handling
-io.on('connection', async (socket) => {
-  console.log('New client connected:', socket.id);
-  
-  // Send initial product list
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/ecommerce';
+async function start() {
   try {
-    const products = await productManager.getAll();
-    socket.emit('products:update', products);
-  } catch (error) {
-    console.error('Error sending initial products:', error);
+    await mongoose.connect(MONGO_URI, { autoIndex: true });
+    console.log('MongoDB connected');
+
+    const httpServer = createServer(app);
+    const io = new Server(httpServer);
+    app.set('io', io);
+
+    io.on('connection', async (socket) => {
+      console.log('New client connected:', socket.id);
+      try {
+        const products = await Product.find().lean();
+        socket.emit('products:update', products);
+      } catch (error) {
+        console.error('Error sending initial products:', error);
+      }
+      socket.on('disconnect', () => {
+        console.log('Client disconnected:', socket.id);
+      });
+    });
+
+    httpServer.listen(PORT, () => {
+      console.log(`Server listening on http://localhost:${PORT}`);
+    });
+  } catch (err) {
+    console.error('Failed to start server:', err);
+    process.exit(1);
   }
+}
 
-  socket.on('disconnect', () => {
-    console.log('Client disconnected:', socket.id);
-  });
-});
-
-httpServer.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
-});
+start();
