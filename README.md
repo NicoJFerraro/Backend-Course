@@ -90,7 +90,12 @@ Backend-Course/
    - Obtené tu connection string
    - Exportá la variable de entorno:
    ```bash
-   export MONGO_URI="mongodb+srv://usuario:password@cluster.mongodb.net/ecommerce"
+  # Ejemplo (usar SIEMPRE placeholders, NO comitear credenciales reales)
+  # En tu archivo .env (ya ignorado en .gitignore):
+  # MONGO_URI='mongodb+srv://<USERNAME>:<PASSWORD>@<CLUSTER_HOST>/<DBNAME>?retryWrites=true&w=majority'
+   
+  # Para una export manual temporal en la terminal:
+  export MONGO_URI="mongodb+srv://<USERNAME>:<PASSWORD>@<CLUSTER_HOST>/<DBNAME>?retryWrites=true&w=majority"
    ```
 
 4. **Poblá la base de datos** (opcional):
